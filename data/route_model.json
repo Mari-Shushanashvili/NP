@@ -1,0 +1,15 @@
+{
+  "strategy": "blue_hsv_threshold",
+  "hsv_lower": [
+    95,
+    70,
+    60
+  ],
+  "hsv_upper": [
+    145,
+    255,
+    255
+  ],
+  "route_pixels": 18143,
+  "notes": "Mask extracted via HSV thresholding for Google-Maps style blue route. Then morphology cleanup + largest connected component."
+}
