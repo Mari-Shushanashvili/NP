@@ -18,6 +18,17 @@ def load_spline(project_root: Path):
     return np.load(p).astype(np.float32), p
 
 
+def load_dt(project_root: Path):
+    """
+    Distance transform map (computed on the inflated corridor mask in width_and_corridor.py):
+    dt[y,x] = distance (px) to nearest corridor boundary.
+    """
+    p = project_root / "data" / "dt_halfwidth.npy"
+    if not p.exists():
+        raise FileNotFoundError(f"Missing {p} (run Step 3: width_and_corridor.py)")
+    return np.load(p).astype(np.float32), p
+
+
 def load_mask(project_root: Path, use_inflated: bool = True):
     """
     Loads the corridor mask for visualization.
@@ -40,7 +51,6 @@ def load_mask(project_root: Path, use_inflated: bool = True):
     return (mask > 0), p
 
 
-
 def load_corridor_params(project_root: Path):
     p = project_root / "data" / "corridor_params.json"
     if not p.exists():
@@ -52,13 +62,54 @@ def load_corridor_params(project_root: Path):
 # -----------------------------
 # IVP model
 # xdot = v (with saturation)
-# vdot = kp (T(t) - x) - kd v
+# vdot = kp (T(t) - x) - kd v + wall_force(x)
 # -----------------------------
-def rk4_step(x, v, t_idx, dt, spline_pts, kp, kd, vmax, target_idx_fn):
+def rk4_step(
+    x,
+    v,
+    t_idx,
+    dt,
+    spline_pts,
+    kp,
+    kd,
+    vmax,
+    target_idx_fn,
+    dt_map=None,
+    robot_radius=0.0,
+    k_wall=0.0,
+    wall_margin=5.0,
+):
     def f(xi, vi, ti):
+        # Target point on spline (time-varying waypoint)
         T = spline_pts[target_idx_fn(ti)]
+
+        # Base tracking + damping acceleration
         a = kp * (T - xi) - kd * vi
 
+        # -----------------------------
+        # NEW: Active wall force using Distance Transform
+        # -----------------------------
+        if dt_map is not None and k_wall > 0.0:
+            h, w = dt_map.shape
+            # clamp to safe interior for central differences
+            px = int(np.clip(round(float(xi[0])), 1, w - 2))
+            py = int(np.clip(round(float(xi[1])), 1, h - 2))
+
+            dist_to_wall = float(dt_map[py, px])
+            thresh = float(robot_radius + wall_margin)
+
+            if dist_to_wall < thresh:
+                # central differences (0.5 factor)
+                gx = 0.5 * (float(dt_map[py, px + 1]) - float(dt_map[py, px - 1]))
+                gy = 0.5 * (float(dt_map[py + 1, px]) - float(dt_map[py - 1, px]))
+
+                grad = np.array([gx, gy], dtype=np.float32)
+                grad /= (np.linalg.norm(grad) + 1e-9)  # normalize for stability
+
+                pen = thresh - dist_to_wall  # penetration depth into unsafe band
+                a += float(k_wall) * pen * grad
+
+        # Velocity saturation on xdot (as in your original)
         speed = np.linalg.norm(vi) + 1e-9
         scale = min(1.0, vmax / speed)
         xdot = vi * scale
@@ -70,8 +121,8 @@ def rk4_step(x, v, t_idx, dt, spline_pts, kp, kd, vmax, target_idx_fn):
     k3x, k3v = f(x + 0.5 * dt * k2x, v + 0.5 * dt * k2v, t_idx + 0.5)
     k4x, k4v = f(x + dt * k3x, v + dt * k3v, t_idx + 1.0)
 
-    x_new = x + (dt / 6.0) * (k1x + 2*k2x + 2*k3x + k4x)
-    v_new = v + (dt / 6.0) * (k1v + 2*k2v + 2*k3v + k4v)
+    x_new = x + (dt / 6.0) * (k1x + 2 * k2x + 2 * k3x + k4x)
+    v_new = v + (dt / 6.0) * (k1v + 2 * k2v + 2 * k3v + k4v)
     return x_new, v_new
 
 
@@ -101,8 +152,9 @@ def make_target_index_fn(M, frames, mode="ease"):
 
     def fn(ti):
         a = np.clip(ti / (frames - 1), 0.0, 1.0)
-        a = a*a*(3 - 2*a)  # smoothstep
+        a = a * a * (3 - 2 * a)  # smoothstep
         return int(a * (M - 1))
+
     return fn
 
 
@@ -113,6 +165,7 @@ def main():
     project_root = Path(__file__).resolve().parents[1]
 
     spline_pts, _ = load_spline(project_root)
+    dt_map, _ = load_dt(project_root)  # NEW: DT for wall forces
     route_bin, mask_used = load_mask(project_root, use_inflated=True)
     print("Visualizing corridor mask:", mask_used)
     cparams, _ = load_corridor_params(project_root)
@@ -121,14 +174,19 @@ def main():
     r = float(cparams["robot_radius_px"])
 
     # =============================
-    # Option B: Controller tuning ✅
+    # Controller tuning
     # =============================
     kp = 5.0
     kd = 3.0
     vmax = 40.0
 
+    # NEW: Wall force settings
+    USE_WALL_FORCE = True
+    k_wall = 120.0         # start modest; increase if you still graze walls
+    wall_margin = 5.0      # your "+5" buffer band
+
     # =========================================
-    # Option A: safety buffer (switch on/off) ✅
+    # Safety buffer (switch on/off)
     # =========================================
     USE_EPS_BUFFER = True
     eps = 0.3  # pixels
@@ -162,7 +220,14 @@ def main():
         margins[k] = margin
         target_traj[k] = spline_pts[target_idx_fn(k)]
 
-        x, v = rk4_step(x, v, k, dt, spline_pts, kp, kd, vmax, target_idx_fn)
+        x, v = rk4_step(
+            x, v, k, dt,
+            spline_pts, kp, kd, vmax, target_idx_fn,
+            dt_map=dt_map if USE_WALL_FORCE else None,
+            robot_radius=r,
+            k_wall=k_wall if USE_WALL_FORCE else 0.0,
+            wall_margin=wall_margin
+        )
 
     # Report constraint results
     max_violation = float(np.max(np.maximum(0.0, -margins)))
@@ -175,21 +240,21 @@ def main():
     else:
         print("Using raw half-width (no eps buffer)")
     print(f"kp={kp}, kd={kd}, vmax={vmax}, dt={dt}, frames={frames}")
+    if USE_WALL_FORCE:
+        print(f"Wall force ON: k_wall={k_wall}, wall_margin={wall_margin}")
+    else:
+        print("Wall force OFF")
     print(f"Max violation (px): {max_violation:.3f}   (0.0 is ideal)")
     print(f"Violation rate (% frames): {viol_rate:.2f}%")
 
-    # ===========================
-    # PASS/FAIL metric ✅
-    # ===========================
+    # PASS/FAIL metric
     if max_violation == 0.0 and viol_rate == 0.0:
         print("PASS ✅ Robot stayed inside corridor for all frames.")
     else:
         print("NOT PASS YET ⚠️ Minor boundary violations occurred.")
         print("Tips: reduce vmax, increase kd, lower kp, or increase eps slightly.")
 
-    # -----------------------------
     # Animation
-    # -----------------------------
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.imshow(route_bin, cmap="gray", alpha=0.25)
     ax.plot(spline_pts[:, 0], spline_pts[:, 1], linewidth=2)
@@ -203,25 +268,21 @@ def main():
     trace, = ax.plot([], [], linewidth=2)
 
     def update(frame):
-        x = traj[frame]
-        robot_patch.center = (float(x[0]), float(x[1]))
+        xx = traj[frame]
+        robot_patch.center = (float(xx[0]), float(xx[1]))
         txy = target_traj[frame]
         target_dot.set_offsets([txy[0], txy[1]])
-        trace.set_data(traj[:frame+1, 0], traj[:frame+1, 1])
+        trace.set_data(traj[:frame + 1, 0], traj[:frame + 1, 1])
 
         # Visual hint if violation
-        if margins[frame] < 0:
-            robot_patch.set_linestyle("--")
-        else:
-            robot_patch.set_linestyle("-")
-
+        robot_patch.set_linestyle("--" if margins[frame] < 0 else "-")
         return robot_patch, target_dot, trace
 
     anim = FuncAnimation(fig, update, frames=frames, interval=20, blit=True)
     plt.show()
 
     # Optional save:
-    # out = project_root / "outputs" / "taska1_robot_ivp.mp4"
+    # out = project_root / "outputs" / "task1_robot_ivp.mp4"
     # out.parent.mkdir(exist_ok=True)
     # anim.save(str(out), fps=30, dpi=150)
     # print("Saved:", out)
