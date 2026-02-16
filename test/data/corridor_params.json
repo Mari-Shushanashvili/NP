@@ -1,0 +1,9 @@
+{
+  "w_half_px": 16.378297805786133,
+  "robot_radius_px": 4.094574451446533,
+  "safe_margin_px": 12.2837233543396,
+  "inflate_px": 10,
+  "width_method": "distance_transform_on_INFLATED_mask + percentile30_along_spline",
+  "constraint": "dist_to_centerline(x) + robot_radius <= w_half",
+  "notes": "Corridor widened by dilation to provide extra margin/passing space."
+}

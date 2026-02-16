@@ -1,0 +1,14 @@
+{
+  "image": "data/map.png",
+  "A": [
+    73,
+    139
+  ],
+  "B": [
+    1385,
+    350
+  ],
+  "sample_window": 120,
+  "ring_inner": 10,
+  "ring_outer": 55
+}
