@@ -6,7 +6,6 @@ import matplotlib.image as mpimg
 
 
 def main():
-    # --- paths (edit if needed) ---
     project_root = Path(__file__).resolve().parents[1]
     img_path = project_root / "data" / "map.png"
     out_path = project_root / "data" / "config.json"
@@ -52,10 +51,9 @@ def main():
                 "image": "data/map.png",
                 "A": A,
                 "B": B,
-                # Optional tuning parameters you may use later:
-                "sample_window": 120,     # pixels around A/B to learn route look
-                "ring_inner": 10,         # ignore center around the click (pin/marker)
-                "ring_outer": 55,         # how far from click to sample
+                "sample_window": 120,
+                "ring_inner": 10,
+                "ring_outer": 55,
             }
 
             out_path.write_text(json.dumps(cfg, indent=2), encoding="utf-8")

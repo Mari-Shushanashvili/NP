@@ -55,7 +55,7 @@ def make_blue_mask(rgb_float01: np.ndarray,
 
 def clean_mask(mask: np.ndarray) -> np.ndarray:
     """
-    Morphological cleanup: close gaps then remove noise.
+    close gaps then remove noise.
     """
     mask = mask.copy()
 
@@ -82,7 +82,6 @@ def main():
     rgb = load_image_rgb_float01(img_path)
 
     # --- HSV thresholds (tuned for Google Maps blue) ---
-    # If needed, we can adjust these later.
     hsv_lower = (95, 70, 60)
     hsv_upper = (145, 255, 255)
 

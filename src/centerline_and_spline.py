@@ -9,9 +9,7 @@ from skimage.morphology import skeletonize
 from scipy.interpolate import splprep, splev
 
 
-# -----------------------------
 # Utilities
-# -----------------------------
 def load_config(project_root: Path):
     cfg_path = project_root / "data" / "config.json"
     cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
@@ -86,8 +84,7 @@ def bfs_shortest_path_8n(skel: np.ndarray, start_xy, goal_xy):
                 q.append((xn, yn))
 
     if not found:
-        raise RuntimeError("No skeleton path found between start and goal. "
-                           "Try increasing mask connectivity (Step1 morphology) or check A/B placement.")
+        raise RuntimeError("No skeleton path found between start and goal.")
 
     # Reconstruct
     path = []

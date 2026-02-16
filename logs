@@ -1,0 +1,40 @@
+
+
+=== Task 1 Validation Report ===
+Robot Radius: 4.45 px
+Min Distance to Wall: 10.79 px
+Worst Margin (dist - r): 6.340 px (Negative = Collision)
+Violation Rate: 0.00%
+PASS Robot stayed inside corridor for all frames.
+
+
+Running Task 2 (RK4, Lanes)...
+Mask: route_mask_inflated.png
+Spacing: 10.50px (Diameter is 7.00px)
+Cohesion: 0.0 (Forced 0.0)
+
+=== TASK 2 NUMERICAL VALIDATION ===
+Min pair distance: 0.00 px
+Interaction Rate (< 8.00px): 14.13%
+Hard Collision Rate (< 7.00px): 12.19%
+Wall Contact Rate: 0.00%
+
+=== TASK 3 NUMERICAL VALIDATION ===
+Frames: 325, dt=0.0333s, fps=30.05
+Robot radius r_robot = 12.00 px
+Ped radius (assumed) r_ped = 10.00 px
+Hard robot–ped safety threshold: 22.00 px
+Hard robot–robot overlap threshold: 24.00 px
+Interaction radius d_safe: 80.00 px
+
+Robot–Pedestrian distances:
+  Min distance: 69.93 px
+  % frames in soft zone (< d_safe): 81.85%
+  % frames in hard zone (< collision): 0.00%
+
+Robot–Robot distances:
+  Min distance: 352.57 px
+  % frames in soft zone (< d_safe): 0.00%
+  % frames in hard zone (< collision): 0.00%
+
+STATUS: SUCCESS No hard-threshold collisions recorded.

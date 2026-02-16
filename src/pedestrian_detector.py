@@ -9,57 +9,62 @@ def main():
     output_data_path = project_root / "data" / "pedestrian_trajectories.npy"
 
     cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        raise FileNotFoundError(f"Could not open video: {video_path}")
 
     # Background Subtractor
-    fgbg = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=50, detectShadows=True)
+    fgbg = cv2.createBackgroundSubtractorMOG2(
+        history=500,
+        varThreshold=50,
+        detectShadows=True
+    )
 
     all_frames_data = []
 
-    print("Processing video... Press 'q' to stop.")
+    print("Processing video (centroid detections per frame)...")
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        # 1. Apply background subtraction
+        # 1) Background subtraction
         fgmask = fgbg.apply(frame)
 
-        # 2. Clean up noise (Morphology)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
-        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_DILATE, kernel, iterations=2)
+        # 2) Remove shadows + threshold to binary
+        #    MOG2 shadows often appear as 127; keep only strong foreground (255)
+        _, fgmask = cv2.threshold(fgmask, 200, 255, cv2.THRESH_BINARY)
 
-        # 3. Find Contours (the pedestrians)
+        # 3) Morphological cleanup
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel, iterations=2)
+        fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+        # 4) Find contours and compute centroids
         contours, _ = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        current_frame_peds = []
+        frame_centroids = []
         for cnt in contours:
-            if cv2.contourArea(cnt) < 150:  # Ignore small noise
+            area = cv2.contourArea(cnt)
+            if area < 80:  # ignore small noise blobs
                 continue
 
-            # Get center of the pedestrian
             M = cv2.moments(cnt)
-            if M["m00"] != 0:
-                cx = int(M["m10"] / M["m00"])
-                cy = int(M["m01"] / M["m00"])
-                current_frame_peds.append([cx, cy])
+            if M["m00"] <= 1e-9:
+                continue
 
-                # Visual feedback
-                cv2.circle(frame, (cx, cy), 10, (0, 255, 0), -1)
+            cx = float(M["m10"] / M["m00"])
+            cy = float(M["m01"] / M["m00"])
+            frame_centroids.append([cx, cy])
 
-        all_frames_data.append(current_frame_peds)
-
-        cv2.imshow('Pedestrian Tracking (Green dots = Detected obstacles)', frame)
-        if cv2.waitKey(30) & 0xFF == ord('q'):
-            break
+        all_frames_data.append(np.array(frame_centroids, dtype=np.float32))
 
     cap.release()
     cv2.destroyAllWindows()
 
-    # Save data for the simulation
     np.save(output_data_path, np.array(all_frames_data, dtype=object))
-    print(f"Extraction complete! Saved {len(all_frames_data)} frames of data to {output_data_path}")
+    print(f"Saved pedestrian detections: {output_data_path}")
+    print(f"Frames processed: {len(all_frames_data)}")
 
 
 if __name__ == "__main__":

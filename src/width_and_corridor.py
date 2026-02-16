@@ -17,27 +17,14 @@ def main():
     if not spline_path.exists():
         raise FileNotFoundError(f"Missing {spline_path}. Run Step 2 first.")
 
-    # ------------------------------------------------------------
     # Load corridor mask (white corridor on black)
-    # ------------------------------------------------------------
     mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
     route_bin = (mask > 0).astype(np.uint8)  # 0/1
 
-    # ============================================================
-    # NEW (for Task 2 readiness): Inflate the corridor width
-    # ============================================================
-    # We "dilate" the corridor mask so the white tube becomes wider in pixels.
-    # This is useful when you want more room for multiple robots passing.
-    #
-    # Interpretation for report: this dilation represents an uncertainty/safety margin
-    # due to finite pixel resolution / extraction noise from the screenshot.
-    #
-    # Tune:
-    #   inflate_px = 0  -> no widening (original corridor)
-    #   inflate_px = 3  -> small widening
-    #   inflate_px = 5  -> moderate widening (recommended start)
-    #   inflate_px = 8  -> large widening
-    inflate_px = 10  # <---- YOU CAN CHANGE THIS VALUE
+    # Inflate the corridor width
+
+
+    inflate_px = 10
 
     kernel = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE,
@@ -47,15 +34,13 @@ def main():
     # route_bin_inflated is the widened corridor mask
     route_bin_inflated = cv2.dilate(route_bin, kernel, iterations=1)
 
-    # Optional: save inflated mask for debugging / slides
+    # save inflated mask for debugging / slides
     inflated_mask_path = project_root / "data" / "route_mask_inflated.png"
     cv2.imwrite(str(inflated_mask_path), (route_bin_inflated * 255).astype(np.uint8))
     print("Saved inflated corridor mask:", inflated_mask_path)
 
-    # ------------------------------------------------------------
-    # Distance transform (computed on the *inflated* corridor)
+    # Distance transform (computed on the inflated corridor)
     # dt[y,x] = distance to nearest boundary of the inflated corridor
-    # ------------------------------------------------------------
     dt = cv2.distanceTransform(route_bin_inflated * 255, cv2.DIST_L2, 5).astype(np.float32)
 
     # Save DT for reuse
@@ -63,9 +48,7 @@ def main():
     np.save(dt_out, dt)
     print("Saved distance transform:", dt_out)
 
-    # ------------------------------------------------------------
     # Load spline and sample DT along it -> estimate half-width
-    # ------------------------------------------------------------
     spline = np.load(spline_path).astype(np.float32)
     h, w = route_bin.shape
 
@@ -76,18 +59,13 @@ def main():
     # Robust half-width estimate from DT values on centerline
     w_half = float(np.percentile(dt_samples, 30))
 
-    # ------------------------------------------------------------
     # Robot radius definition
-    # (keep same as before; widening corridor will automatically make safe region bigger)
-    # ------------------------------------------------------------
     robot_radius = float(max(3.0, min(0.25 * w_half, 12.0)))
 
     # Safe margin for center positions
     safe_margin = w_half - robot_radius
 
-    # ------------------------------------------------------------
-    # Save corridor parameters (include inflation info for reproducibility)
-    # ------------------------------------------------------------
+    # Save corridor parameters
     params = {
         "w_half_px": w_half,
         "robot_radius_px": robot_radius,
@@ -109,10 +87,8 @@ def main():
     print(f"Safe margin (w_half-r)= {safe_margin:.2f} px")
     print("Constraint: dist_to_centerline + r <= w_half\n")
 
-    # ------------------------------------------------------------
     # Debug visualization: show safe region for robot centers
     # Safe centers: dt >= robot_radius
-    # ------------------------------------------------------------
     safe_center_region = (dt >= robot_radius).astype(np.uint8)
 
     fig, ax = plt.subplots(figsize=(12, 6))

@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-
 import matplotlib.image as mpimg
 
 
@@ -27,7 +26,6 @@ def load_config(config_path: str | Path):
 def load_image_from_config(cfg, project_root: str | Path | None = None):
     """
     Loads the image specified in cfg["image"].
-    If project_root is provided, image path is resolved relative to it.
     """
     img_rel = Path(cfg["image"])
     img_path = img_rel if project_root is None else Path(project_root) / img_rel
