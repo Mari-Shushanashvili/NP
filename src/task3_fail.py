@@ -38,11 +38,9 @@ def main():
     w, h, fps = int(cap.get(3)), int(cap.get(4)), cap.get(5) or 25.0
     dt_sec = 1.0 / fps
 
-    # --- LIMITATION PARAMETERS ---
-    # We increase d_safe and k_rep massively to show the "Freeze" limitation
     kp_goal = 5.0  # Lower pull toward goal
     kd_phys = 10.0  # Higher damping
-    d_safe = 150.0  # HUGE Safety Radius (The Limitation)
+    d_safe = 150.0  # Huge Safety Radius
     k_rep_ped = 5e5  # Massive Repulsion
     vmax = 80.0
 
@@ -60,13 +58,12 @@ def main():
         gvec = goal[0] - Xc[0]
         A = kp_goal * safe_unit(gvec)
 
-        # Repulsion (The cause of the freeze)
+        # Repulsion
         if current_peds.size > 0:
             diffs = Xc[0] - current_peds
             dists = np.linalg.norm(diffs, axis=1)
             mask = dists < d_safe
             if np.any(mask):
-                # Using your exact weighting logic but with the "Fail" parameters
                 wgt = ((d_safe - dists[mask]) / d_safe) ** 2
                 A += (k_rep_ped * (wgt[:, None] * (diffs[mask] / dists[mask, None]))).sum(axis=0)
 
@@ -115,8 +112,6 @@ if __name__ == "__main__": main()
 
 
 """
-=== LIMITATION DOCUMENTATION: TASK 3 (PEDESTRIAN NAVIGATION) ===
-
 WHAT IS THE LIMITATION?
 The primary limitation of this Artificial Potential Field (APF) approach is the "Local Minimum" 
 or "Freezing Behavior." By increasing the 'd_safe' parameter (e.g., to 150px), the robot's 

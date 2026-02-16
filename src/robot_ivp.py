@@ -225,3 +225,38 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+WHAT DOES THIS CODE DO?
+Task 1 simulator: moves a single robot from A→B inside the extracted corridor by
+following the spline centerline while enforcing a strict “stay inside walls” constraint.
+
+HOW DOES IT WORK?
+1) INPUTS:
+   - centerline_spline.npy  : smooth path S(u) through the corridor
+   - dt_halfwidth.npy       : distance-to-wall field D(x,y) (EDT lookup)
+   - route_mask(_inflated).png + corridor_params.json : corridor geometry + robot radius
+
+2) PHYSICS MODEL (IVP):
+   State: y = [x, y, vx, vy]
+   Dynamics:
+       dx/dt = v
+       dv/dt = F_goal + F_wall − k_d v
+   where:
+   - F_goal is PD attraction toward a moving target point on the spline
+   - F_wall is wall repulsion based on ∇D(x,y) when the robot gets within a margin
+
+3) NUMERICAL METHOD:
+   Uses explicit RK4 with timestep dt to integrate the ODEs (stable for stiff wall forces),
+   plus a speed cap vmax to prevent tunneling.
+
+4) VALIDATION (“DEFENSE” METRIC):
+   Each frame computes margin = D(x,y) − r_robot.
+   margin > 0 => safe, margin < 0 => boundary collision.
+   Reports worst margin + violation rate (% frames margin<0).
+
+WHY THIS APPROACH?
+Spline gives a continuous target curve, EDT + finite-difference ∇D provides fast wall normals,
+and RK4 keeps the simulation stable when repulsion spikes near corridor boundaries.
+"""

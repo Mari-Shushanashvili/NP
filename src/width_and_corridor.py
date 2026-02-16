@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -21,9 +20,6 @@ def main():
     mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
     route_bin = (mask > 0).astype(np.uint8)  # 0/1
 
-    # Inflate the corridor width
-
-
     inflate_px = 10
 
     kernel = cv2.getStructuringElement(
@@ -34,7 +30,6 @@ def main():
     # route_bin_inflated is the widened corridor mask
     route_bin_inflated = cv2.dilate(route_bin, kernel, iterations=1)
 
-    # save inflated mask for debugging / slides
     inflated_mask_path = project_root / "data" / "route_mask_inflated.png"
     cv2.imwrite(str(inflated_mask_path), (route_bin_inflated * 255).astype(np.uint8))
     print("Saved inflated corridor mask:", inflated_mask_path)

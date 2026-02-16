@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 import matplotlib
-
 # Use TkAgg for better compatibility with interactive point picking in PyCharm/Windows
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -273,8 +272,6 @@ if __name__ == "__main__":
     main()
 
 """
-=== CODE DOCUMENTATION ===
-
 WHAT DOES THIS CODE DO?
 This script simulates two autonomous robots (Cyan and Magenta) navigating through a 
 crowded pedestrian environment. The robots must move from their starting positions 

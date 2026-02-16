@@ -91,7 +91,7 @@ def main():
     # 2) cleanup
     mask = clean_mask(mask)
 
-    # 3) keep largest component (your route)
+    # 3) keep largest component
     mask = largest_connected_component(mask)
 
     # Save mask image

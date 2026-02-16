@@ -1,15 +1,12 @@
 import json
 from pathlib import Path
-
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-
 from skimage.morphology import skeletonize
 from scipy.interpolate import splprep, splev
 
 
-# Utilities
 def load_config(project_root: Path):
     cfg_path = project_root / "data" / "config.json"
     cfg = json.loads(cfg_path.read_text(encoding="utf-8"))

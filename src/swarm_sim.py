@@ -312,3 +312,42 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    """
+    WHAT DOES THIS CODE DO?
+    This script simulates two robot swarms moving in opposite directions through a
+    narrow corridor. Robots must reach their goals while avoiding walls and other robots,
+    demonstrating collision-free bi-directional flow.
+
+    HOW DOES IT WORK?
+    1. INPUTS:
+       Loads the spline centerline, corridor distance transform, and initial swarm
+       configuration. These define robot positions, safety radii, and corridor geometry.
+
+    2. PHYSICS MODEL (Initial Value Problem):
+       Each robot state is:
+           y = [x, y, vx, vy]
+
+       Motion follows:
+           dx/dt = v
+           dv/dt = F_goal + F_lane + F_wall + ΣF_repulsion − k_d v
+
+       Forces include:
+       - Goal attraction: pulls robots forward along assigned lane
+       - Lane constraint: separates opposing traffic into parallel lanes
+       - Wall repulsion: uses gradient of distance transform to enforce boundaries
+       - Robot repulsion: prevents inter-robot collisions using distance-based forces
+
+    3. NUMERICAL METHOD:
+       Uses Runge-Kutta 4 (RK4) integration to solve the coupled multi-body IVP.
+       RK4 ensures stability and accuracy when robots experience strong repulsive forces.
+
+    4. SAFETY VALIDATION:
+       The simulation logs minimum distances and collision thresholds to verify that
+       robots maintain safe separation and remain within corridor constraints.
+
+    WHY THIS APPROACH?
+    RK4 provides stable integration of stiff force systems, while potential-field forces
+    enable smooth, reactive navigation. Lane separation transforms head-on conflicts into
+    organized traffic flow, ensuring safe and physically realistic swarm motion.
+    """

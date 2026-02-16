@@ -27,7 +27,6 @@ def main():
     X = np.vstack([XA, XB])
     V = np.zeros_like(X)
 
-    # Matching the lane logic from your swarm_sim.py
     laneA = spline + 4.0
     laneB = spline - 4.0
 
@@ -71,14 +70,14 @@ def main():
             V *= np.minimum(1.0, vmax / (speeds[:, None] + 1e-9))
         X += V * dt
 
-    # --- NUMERICAL VALIDATION LOGS ---
+    # NUMERICAL VALIDATION LOGS
     print("\n=== TASK 2 FAIL NUMERICAL VALIDATION ===")
     print(f"Robot Count: {N} (Limit exceeded)")
     print(f"Collision Rate: {np.mean(any_hard_collision) * 100:.2f}%")
     print(f"Final Average Speed: {np.mean(np.linalg.norm(V, axis=1)):.2f} px/s")
     print("STATUS: FAIL (System entered Deadlock State)")
 
-    # --- ANIMATION ---
+    # ANIMATION
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.imshow(mask, cmap="gray", alpha=0.3)
     scatA = ax.scatter([], [], c='cyan', s=40, edgecolors='white', label='Group A')
@@ -100,8 +99,6 @@ if __name__ == "__main__":
     main()
 
     """
-    === LIMITATION DOCUMENTATION: TASK 2 (SWARM COORDINATION) ===
-
     WHAT IS THE LIMITATION?
     This file demonstrates the "High-Density Deadlock" limitation of decentralized navigation.
 

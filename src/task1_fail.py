@@ -65,8 +65,6 @@ def main():
 if __name__ == "__main__": main()
 
 """
-=== LIMITATION DOCUMENTATION: TASK 1 (IVP PATH FOLLOWING) ===
-
 WHAT IS THE LIMITATION?
 The limitation shown here is "Dynamic Overshoot" caused by a mismatch between Velocity (vmax) 
 and Boundary Repulsion (k_wall). 
