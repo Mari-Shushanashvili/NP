@@ -97,19 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    """
-    WHAT IS THE LIMITATION?
-    This file demonstrates the "High-Density Deadlock" limitation of decentralized navigation.
-
-    WHY DOES IT OCCUR?
-    When the number of robots (N) is increased beyond the lane's capacity, the inter-robot 
-    repulsion forces (k_rep_rob) become the dominant factor in the acceleration equation. 
-    Because each robot only reacts to its immediate neighbors, the swarm enters a "frozen" 
-    crystalline state where no robot can move forward without violating a safety radius.
-
-    RESULT:
-    A total traffic jam or deadlock. This proves that simple potential fields are insufficient 
-    for high-density swarms and would require higher-level path planning or "lane-yielding" 
-    logic to succeed in crowded constraints.
-    """

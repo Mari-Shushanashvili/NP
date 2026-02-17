@@ -121,7 +121,7 @@ def main():
         plt.scatter(XA[:, 0], XA[:, 1], c='cyan', label='A')
         plt.scatter(XB[:, 0], XB[:, 1], c='orange', label='B')
         plt.legend()
-        plt.title("Clean Init Positions")
+        plt.title("Init Positions")
         plt.show()
 
 

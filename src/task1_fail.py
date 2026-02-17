@@ -63,20 +63,3 @@ def main():
 
 
 if __name__ == "__main__": main()
-
-"""
-WHAT IS THE LIMITATION?
-The limitation shown here is "Dynamic Overshoot" caused by a mismatch between Velocity (vmax) 
-and Boundary Repulsion (k_wall). 
-
-WHY DOES IT OCCUR?
-When the robot is tuned to move at high speeds (vmax > 200), it gains significant momentum. 
-If the 'k_wall' parameter is not scaled proportionally, the repulsive force from the track 
-boundary is mathematically insufficient to decelerate the robot's lateral velocity before 
-it crosses the edge.
-
-RESULT:
-The robot violates the corridor constraint. This demonstrates that the Fourth-Order RK4 method, 
-while accurate, cannot compensate for physical parameters that exceed the 'braking distance' 
-provided by the potential field.
-"""

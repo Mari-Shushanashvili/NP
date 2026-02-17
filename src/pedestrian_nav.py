@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import matplotlib
-# Use TkAgg for better compatibility with interactive point picking in PyCharm/Windows
+# Useing TkAgg for better compatibility with interactive point picking in PyCharm/Windows
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -139,7 +139,7 @@ def main():
     V = np.zeros((2, 2), dtype=np.float32)
     trajectories = np.zeros((frames_count, 2, 2), dtype=np.float32)
 
-    # Safety Metrics Storage (The "Defense" Logs)
+    # Safety Metrics Storage
     min_robot_ped = np.full((frames_count,), np.inf)
     min_robot_robot = np.full((frames_count,), np.inf)
     below_dsafe_rp = np.zeros((frames_count,), dtype=bool)
@@ -270,37 +270,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-"""
-WHAT DOES THIS CODE DO?
-This script simulates two autonomous robots (Cyan and Magenta) navigating through a 
-crowded pedestrian environment. The robots must move from their starting positions 
-to designated goals while avoiding collisions with moving pedestrians and each other.
-
-HOW DOES IT WORK?
-1. INPUTS: It loads pedestrian trajectories (detected in Task 2) and a video file. 
-   If no goal points exist, it prompts the user to click on the first frame to set 
-   Start/Goal pairs for both robots.
-2. PHYSICS ENGINE: 
-   - RK4 Integration: It uses a 4th-order Runge-Kutta method to calculate motion. 
-     This is more stable and accurate than simple Euler integration.
-   - Force Model: It uses an Artificial Potential Field (APF) approach. 
-     - Attraction: A force pulling the robot toward its goal.
-     - Repulsion: 'Invisible springs' push the robot away from pedestrians and the 
-       other robot. This is split into a 'Soft Zone' (early avoidance) and a 
-       'Hard Barrier' (aggressive push-back to prevent overlap).
-     - Damping: A physical drag force prevents the robots from oscillating or 
-       accelerating infinitely.
-3. ANIMATION: It overlays the simulated robot paths onto the original video 
-   using Matplotlib's FuncAnimation for visual verification.
-
-WHY THIS APPROACH?
-- RK4 is used because standard Euler integration can cause robots to 'jitter' or 
-  pass through objects if the frame rate is low or forces are high.
-- The Dual-Zone Repulsion (Soft + Hard) ensures that robots begin navigating 
-  around people early, but can also 'panic' and push away harder if someone 
-  walks directly into them, ensuring safety.
-- The Numerical Validation (Logs) provides an objective 'Defense' of the simulation, 
-  proving mathematically that the robots maintained a safe distance (r_robot + r_ped) 
-  at all times, even if the visual animation looks crowded.
-"""

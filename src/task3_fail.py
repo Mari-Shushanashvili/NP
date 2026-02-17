@@ -109,21 +109,3 @@ def main():
 
 
 if __name__ == "__main__": main()
-
-
-"""
-WHAT IS THE LIMITATION?
-The primary limitation of this Artificial Potential Field (APF) approach is the "Local Minimum" 
-or "Freezing Behavior." By increasing the 'd_safe' parameter (e.g., to 150px), the robot's 
-repulsive field becomes too large. 
-
-WHY DOES IT OCCUR?
-In a dense environment (like the car-adjacent area in the video), the combined repulsive forces 
-from all pedestrians within that 150px radius create a 'force wall.' Mathematically, the sum 
-of these repulsive vectors becomes equal and opposite to the goal-seeking vector. 
-
-RESULT:
-The robot does not "crash," but it stops moving entirely. This proves that while the RK4 
-integration is stable, the navigation logic requires high-precision tuning of the interaction 
-radius to balance safety against progress.
-"""
